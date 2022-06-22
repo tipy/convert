@@ -21,4 +21,4 @@ convertSnakeToCamel({ first_name: 'Gus' });
 
 | Function name | Parameters | Description |
 |-----|-----|-----|
-| `convertSnakeToCamel` | item: object | it convert the attributes of an object from snake_case to camelCase, you can also pass an array. string, number and other primitives will be return as they are. |
+| `convertSnakeToCamel` | `item: object` | it converts the object's attributes from snake_case to camelCase, you can also pass an `array`. `string`, `number` and other `primitives` will be returned as they are. |
