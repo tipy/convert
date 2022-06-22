@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`convertSnakeToCamel function tests convert a snake_case array into camelCase array 1`] = `
+Array [
+  Object {
+    "name": "flexibility",
+  },
+  Object {
+    "name": "communication",
+  },
+]
+`;
+
+exports[`convertSnakeToCamel function tests convert a snake_case object into camelCase object 1`] = `
+Object {
+  "firstName": "test",
+  "softSkills": Array [
+    Object {
+      "name": "flexibility",
+    },
+    Object {
+      "name": "communication",
+    },
+  ],
+}
+`;
+
+exports[`convertSnakeToCamel function tests returns the same argument passed if it is not object or array 1`] = `"test"`;
