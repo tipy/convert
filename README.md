@@ -2,7 +2,7 @@
 [![GitHub version](https://badge.fury.io/gh/tipy%2Fconvert.svg)](https://badge.fury.io/gh/tipy%2Fconvert)
 [![npm version](https://badge.fury.io/js/@tipy%2Fconvert.svg)](https://badge.fury.io/js/@tipy%2Fconvert)
 
-Convert has a set of convertion utils functions, check the api to see what it is available.
+Convert has a set of conversion utils functions, check the api to see what it is available.
 
 ## Install
 
