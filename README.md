@@ -2,7 +2,7 @@
 [![GitHub version](https://badge.fury.io/gh/tipy%2Fconvert.svg)](https://badge.fury.io/gh/tipy%2Fconvert)
 [![npm version](https://badge.fury.io/js/@tipy%2Fconvert.svg)](https://badge.fury.io/js/@tipy%2Fconvert)
 
-Convert has a set of conversion utility functions focused on compact TypeScript-friendly helpers.
+Convert is a compact TypeScript utility library with grouped converters by JavaScript type.
 
 ## Install
 
@@ -13,57 +13,86 @@ yarn add @tipy/convert
 ## How to use
 
 ```typescript
-import {
-  convertArrayToObject,
-  convertCamelToKebab,
-  convertCamelToSnake,
-  convertKebabToCamel,
-  convertObjectToArray,
-  convertObjectToQueryString,
-  convertQueryStringToObject,
-  convertSnakeToCamel,
-} from '@tipy/convert';
+import { tipy } from '@tipy/convert';
 
-convertSnakeToCamel({ first_name: 'Gus' });
-// { firstName: 'Gus' }
+// string
+const camel = tipy.string.convertSnakeToCamel('first_name');
+const slug = tipy.string.convertToSlug('Hello Convert Library!');
 
-convertCamelToSnake({ firstName: 'Gus' });
-// { first_name: 'Gus' }
+// number / boolean
+const clamped = tipy.number.convertClamp(120, 0, 100);
+const toggled = tipy.boolean.convertToggle(true);
 
-convertCamelToKebab({ firstName: 'Gus' });
-// { 'first-name': 'Gus' }
-
-convertKebabToCamel({ 'first-name': 'Gus' });
-// { firstName: 'Gus' }
-
-convertArrayToObject(
+// array
+const indexed = tipy.array.convertToObject(
   [
     { id: 's1', name: 'flexibility' },
     { id: 's2', name: 'communication' },
   ],
   'id'
 );
-// { s1: { id: 's1', ... }, s2: { id: 's2', ... } }
 
-convertObjectToArray({ s1: { id: 's1' }, s2: { id: 's2' } });
-// [ { key: 's1', value: { id: 's1' } }, { key: 's2', value: { id: 's2' } } ]
+// object
+const camelObject = tipy.object.convertSnakeToCamel({ first_name: 'Gus' });
+const query = tipy.object.convertToQueryString({ page: 2, tags: ['js', 'ts'] });
 
-convertObjectToQueryString({ page: 2, q: 'convert utils', tags: ['js', 'ts'] });
-// page=2&q=convert+utils&tags=js&tags=ts
-
-convertQueryStringToObject('?q=convert+utils&tags=js&tags=ts');
-// { q: 'convert utils', tags: ['js', 'ts'] }
+// date
+const timestamp = tipy.date.convertToTimestamp('2024-01-01T00:00:00.000Z');
 ```
 
-## API
+## Groups
 
-| Function name | Parameters | Description |
-|-----|-----|-----|
-| `convertSnakeToCamel` | `item: object \| array \| primitive` | Converts object keys recursively from `snake_case` to `camelCase`. Arrays are handled recursively and primitives are returned as is. |
-| `convertCamelToSnake` | `item: object \| array \| primitive` | Converts object keys recursively from `camelCase` to `snake_case`. Arrays are handled recursively and primitives are returned as is. |
-| `convertCamelToKebab` | `item: object \| array \| primitive` | Converts object keys recursively from `camelCase` to `kebab-case`. |
-| `convertKebabToCamel` | `item: object \| array \| primitive` | Converts object keys recursively from `kebab-case` to `camelCase`. |
-| `convertArrayToObject` | `list: T[]`, `keySelector: keyof T \| ((item: T, index: number) => string \| number)` | Converts an array into an object indexed by a property name or callback result. |
-| `convertObjectToArray` | `object: Record<string, T>` | Converts an object into an array of `{ key, value }` pairs. |
-| `convertObjectToQueryString` | `object: Record<string, QueryParamValue>` | Converts an object into a query string. Skips `null` and `undefined`, appends repeated keys for arrays. |
-| `convertQueryStringToObject` | `queryString: string` | Converts a query string into an object. Repeated keys become arrays. |
+### `tipy.string`
+- `convertSnakeToCamel(value: string): string`
+- `convertCamelToSnake(value: string): string`
+- `convertCamelToKebab(value: string): string`
+- `convertKebabToCamel(value: string): string`
+- `convertToTitleCase(value: string): string`
+- `convertToSlug(value: string): string`
+- `convertToNumber(value: string): number`
+- `convertToBoolean(value: string): boolean`
+
+### `tipy.number`
+- `convertToString(value: number, radix?: number): string`
+- `convertToBoolean(value: number): boolean`
+- `convertClamp(value: number, min: number, max: number): number`
+- `convertToInt(value: number): number`
+
+### `tipy.boolean`
+- `convertToNumber(value: boolean): number`
+- `convertToString(value: boolean): string`
+- `convertToggle(value: boolean): boolean`
+
+### `tipy.array`
+- `convertToObject(list, keySelector)`
+- `convertUnique(list)`
+- `convertChunk(list, size)`
+- `convertCompact(list)`
+
+### `tipy.object`
+- `convertSnakeToCamel(value)`
+- `convertCamelToSnake(value)`
+- `convertCamelToKebab(value)`
+- `convertKebabToCamel(value)`
+- `convertToArray(object)`
+- `convertToQueryString(object)`
+- `convertFromQueryString(queryString)`
+- `convertPick(object, keys)`
+- `convertOmit(object, keys)`
+
+### `tipy.date`
+- `convertToTimestamp(value)`
+- `convertToIsoString(value)`
+- `convertFromTimestamp(value)`
+
+## Backward compatibility
+
+The previous named exports are still available:
+- `convertSnakeToCamel`
+- `convertCamelToSnake`
+- `convertCamelToKebab`
+- `convertKebabToCamel`
+- `convertArrayToObject`
+- `convertObjectToArray`
+- `convertObjectToQueryString`
+- `convertQueryStringToObject`

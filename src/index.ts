@@ -1,8 +1,21 @@
-const camelToSnake = (str: string) =>
-  str.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
+type UnknownObject = Record<string, unknown>;
+
+type Primitive = string | number | boolean | null | undefined;
+
+export type QueryParamValue = Primitive | Array<string | number | boolean>;
+
+const isArray = (item: unknown): item is unknown[] => Array.isArray(item);
+
+const isObject = (item: unknown): item is UnknownObject =>
+  item !== null && typeof item === 'object' && !isArray(item);
 
 const snakeToCamel = (str: string) =>
-  str.replace(/([-_][a-z])/gi, (group) => group.toUpperCase().replace('-', '').replace('_', ''));
+  str.replace(/([-_][a-z])/gi, (group) =>
+    group.toUpperCase().replace('-', '').replace('_', '')
+  );
+
+const camelToSnake = (str: string) =>
+  str.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
 
 const camelToKebab = (str: string) =>
   str.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
@@ -10,10 +23,21 @@ const camelToKebab = (str: string) =>
 const kebabToCamel = (str: string) =>
   str.replace(/-([a-z])/gi, (_, char: string) => char.toUpperCase());
 
-const isArray = (item: unknown): item is unknown[] => Array.isArray(item);
+const toTitleCase = (str: string) =>
+  str
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`)
+    .join(' ');
 
-const isObject = (item: unknown): item is Record<string, unknown> =>
-  item !== null && typeof item === 'object' && !isArray(item);
+const toSlug = (str: string) =>
+  str
+    .normalize('NFKD')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-');
 
 const convertObjectKeys = (
   item: unknown,
@@ -27,25 +51,13 @@ const convertObjectKeys = (
     return Object.keys(item).reduce((result, key) => {
       result[keyConverter(key)] = convertObjectKeys(item[key], keyConverter);
       return result;
-    }, {} as Record<string, unknown>);
+    }, {} as UnknownObject);
   }
 
   return item;
 };
 
-export const convertSnakeToCamel = <T>(item: T): T =>
-  convertObjectKeys(item, snakeToCamel) as T;
-
-export const convertCamelToSnake = <T>(item: T): T =>
-  convertObjectKeys(item, camelToSnake) as T;
-
-export const convertCamelToKebab = <T>(item: T): T =>
-  convertObjectKeys(item, camelToKebab) as T;
-
-export const convertKebabToCamel = <T>(item: T): T =>
-  convertObjectKeys(item, kebabToCamel) as T;
-
-export const convertArrayToObject = <T>(
+const convertArrayToObjectImpl = <T>(
   list: T[],
   keySelector: keyof T | ((item: T, index: number) => string | number)
 ): Record<string, T> =>
@@ -59,20 +71,12 @@ export const convertArrayToObject = <T>(
     return result;
   }, {} as Record<string, T>);
 
-export const convertObjectToArray = <T>(
+const convertObjectToArrayImpl = <T>(
   object: Record<string, T>
 ): Array<{ key: string; value: T }> =>
   Object.keys(object).map((key) => ({ key, value: object[key] }));
 
-export type QueryParamValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | Array<string | number | boolean>;
-
-export const convertObjectToQueryString = (
+const convertObjectToQueryStringImpl = (
   object: Record<string, QueryParamValue>
 ): string => {
   const searchParams = new URLSearchParams();
@@ -95,7 +99,7 @@ export const convertObjectToQueryString = (
   return searchParams.toString();
 };
 
-export const convertQueryStringToObject = (
+const convertQueryStringToObjectImpl = (
   queryString: string
 ): Record<string, string | string[]> => {
   const normalizedQueryString = queryString.startsWith('?')
@@ -117,3 +121,104 @@ export const convertQueryStringToObject = (
     return result;
   }, {} as Record<string, string | string[]>);
 };
+
+const pick = <T extends UnknownObject, K extends keyof T>(
+  object: T,
+  keys: K[]
+): Pick<T, K> =>
+  keys.reduce((result, key) => {
+    if (key in object) {
+      (result as UnknownObject)[String(key)] = object[key] as unknown;
+    }
+    return result;
+  }, {} as Pick<T, K>);
+
+const omit = <T extends UnknownObject, K extends keyof T>(
+  object: T,
+  keys: K[]
+): Omit<T, K> =>
+  (Object.keys(object) as Array<keyof T>).reduce((result, key) => {
+    if (!keys.includes(key as K)) {
+      (result as UnknownObject)[String(key)] = object[key] as unknown;
+    }
+
+    return result;
+  }, {} as Omit<T, K>);
+
+export const tipy = {
+  string: {
+    convertSnakeToCamel: snakeToCamel,
+    convertCamelToSnake: camelToSnake,
+    convertCamelToKebab: camelToKebab,
+    convertKebabToCamel: kebabToCamel,
+    convertToTitleCase: toTitleCase,
+    convertToSlug: toSlug,
+    convertToNumber: (value: string): number => Number(value),
+    convertToBoolean: (value: string): boolean =>
+      ['true', '1', 'yes', 'y', 'on'].includes(value.trim().toLowerCase()),
+  },
+  number: {
+    convertToString: (value: number, radix = 10): string => value.toString(radix),
+    convertToBoolean: (value: number): boolean => value !== 0,
+    convertClamp: (value: number, min: number, max: number): number =>
+      Math.min(Math.max(value, min), max),
+    convertToInt: (value: number): number => Math.trunc(value),
+  },
+  boolean: {
+    convertToNumber: (value: boolean): number => (value ? 1 : 0),
+    convertToString: (value: boolean): string => String(value),
+    convertToggle: (value: boolean): boolean => !value,
+  },
+  array: {
+    convertToObject: convertArrayToObjectImpl,
+    convertUnique: <T>(list: T[]): T[] => Array.from(new Set(list)),
+    convertChunk: <T>(list: T[], size: number): T[][] => {
+      if (size <= 0) {
+        return [list];
+      }
+
+      return list.reduce((chunks, item, index) => {
+        const chunkIndex = Math.floor(index / size);
+        if (!chunks[chunkIndex]) {
+          chunks[chunkIndex] = [];
+        }
+        chunks[chunkIndex].push(item);
+        return chunks;
+      }, [] as T[][]);
+    },
+    convertCompact: <T>(list: Array<T | null | undefined>): T[] =>
+      list.filter((item): item is T => item !== null && item !== undefined),
+  },
+  object: {
+    convertSnakeToCamel: <T>(value: T): T =>
+      convertObjectKeys(value, snakeToCamel) as T,
+    convertCamelToSnake: <T>(value: T): T =>
+      convertObjectKeys(value, camelToSnake) as T,
+    convertCamelToKebab: <T>(value: T): T =>
+      convertObjectKeys(value, camelToKebab) as T,
+    convertKebabToCamel: <T>(value: T): T =>
+      convertObjectKeys(value, kebabToCamel) as T,
+    convertToArray: convertObjectToArrayImpl,
+    convertToQueryString: convertObjectToQueryStringImpl,
+    convertFromQueryString: convertQueryStringToObjectImpl,
+    convertPick: pick,
+    convertOmit: omit,
+  },
+  date: {
+    convertToTimestamp: (value: Date | string | number): number =>
+      new Date(value).getTime(),
+    convertToIsoString: (value: Date | string | number): string =>
+      new Date(value).toISOString(),
+    convertFromTimestamp: (value: number): Date => new Date(value),
+  },
+};
+
+// Backward-compatible named exports
+export const convertSnakeToCamel = tipy.object.convertSnakeToCamel;
+export const convertCamelToSnake = tipy.object.convertCamelToSnake;
+export const convertCamelToKebab = tipy.object.convertCamelToKebab;
+export const convertKebabToCamel = tipy.object.convertKebabToCamel;
+export const convertArrayToObject = tipy.array.convertToObject;
+export const convertObjectToArray = tipy.object.convertToArray;
+export const convertObjectToQueryString = tipy.object.convertToQueryString;
+export const convertQueryStringToObject = tipy.object.convertFromQueryString;
