@@ -1,30 +1,48 @@
+const camelToSnake = (str: string) =>
+  str.replace(/[A-Z]/g, (char) => `_${char.toLowerCase()}`);
+
 const snakeToCamel = (str: string) =>
-  str.replace(/([-_]\w)/g, (g) => g[1].toUpperCase());
+  str.replace(/([-_][a-z])/gi, (group) => group.toUpperCase().replace('-', '').replace('_', ''));
 
-const isArray = (item: any) => Array.isArray(item);
+const isArray = (item: unknown): item is unknown[] => Array.isArray(item);
 
-const isObject = (item: any) =>
-  item === Object(item) && !isArray(item) && typeof item !== 'function';
+const isObject = (item: unknown): item is Record<string, unknown> =>
+  item !== null && typeof item === 'object' && !isArray(item);
 
-export const convertSnakeToCamel = (item: any) => {
-  try {
-    if (isObject(item)) {
-      const n = {};
-
-      Object.keys(item).forEach((k) => {
-        n[snakeToCamel(k)] = convertSnakeToCamel(item[k]);
-      });
-
-      return n;
-    }
-
-    if (isArray(item)) {
-      return item.map((i: any) => convertSnakeToCamel(i));
-    }
-
-    return item;
-  } catch (e) {
-    console.error(e);
-    return {};
+const convertObjectKeys = (
+  item: unknown,
+  keyConverter: (key: string) => string
+): unknown => {
+  if (isArray(item)) {
+    return item.map((value) => convertObjectKeys(value, keyConverter));
   }
+
+  if (isObject(item)) {
+    return Object.keys(item).reduce((result, key) => {
+      result[keyConverter(key)] = convertObjectKeys(item[key], keyConverter);
+      return result;
+    }, {} as Record<string, unknown>);
+  }
+
+  return item;
 };
+
+export const convertSnakeToCamel = <T>(item: T): T =>
+  convertObjectKeys(item, snakeToCamel) as T;
+
+export const convertCamelToSnake = <T>(item: T): T =>
+  convertObjectKeys(item, camelToSnake) as T;
+
+export const convertArrayToObject = <T>(
+  list: T[],
+  keySelector: keyof T | ((item: T, index: number) => string | number)
+): Record<string, T> =>
+  list.reduce((result, item, index) => {
+    const key =
+      typeof keySelector === 'function'
+        ? keySelector(item, index)
+        : (item[keySelector] as unknown as string | number);
+
+    result[String(key)] = item;
+    return result;
+  }, {} as Record<string, T>);

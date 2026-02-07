@@ -1,12 +1,50 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`convertArrayToObject function tests convert an array into object using a property as key selector 1`] = `
+Object {
+  "s1": Object {
+    "id": "s1",
+    "name": "flexibility",
+  },
+  "s2": Object {
+    "id": "s2",
+    "name": "communication",
+  },
+}
+`;
+
+exports[`convertArrayToObject function tests convert an array into object using callback as key selector 1`] = `
+Object {
+  "0": Object {
+    "name": "flexibility",
+  },
+  "1": Object {
+    "name": "communication",
+  },
+}
+`;
+
+exports[`convertCamelToSnake function tests convert a camelCase object into snake_case object 1`] = `
+Object {
+  "first_name": "test",
+  "soft_skills": Array [
+    Object {
+      "skill_name": "flexibility",
+    },
+    Object {
+      "skill_name": "communication",
+    },
+  ],
+}
+`;
+
 exports[`convertSnakeToCamel function tests convert a snake_case array into camelCase array 1`] = `
 Array [
   Object {
-    "name": "flexibility",
+    "skillName": "flexibility",
   },
   Object {
-    "name": "communication",
+    "skillName": "communication",
   },
 ]
 `;
@@ -16,10 +54,10 @@ Object {
   "firstName": "test",
   "softSkills": Array [
     Object {
-      "name": "flexibility",
+      "skillName": "flexibility",
     },
     Object {
-      "name": "communication",
+      "skillName": "communication",
     },
   ],
 }
